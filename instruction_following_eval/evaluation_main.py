@@ -16,7 +16,11 @@
 """Binary of evaluating instruction following. See README.md."""
 
 import os
+import sys
 from typing import Sequence
+
+# Automatically add parent directory to sys.path so 'instruction_following_eval' package is found
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from absl import app
 from absl import flags
@@ -48,6 +52,19 @@ def main(argv):
   inputs = evaluation_lib.read_prompt_list(_INPUT_DATA.value)
   prompt_to_response = evaluation_lib.read_prompt_to_response_dict(
       _INPUT_RESPONSE_DATA.value)
+
+  # Support evaluating a subset if response data does not cover all prompts
+  matching_inputs = [inp for inp in inputs if inp.prompt in prompt_to_response]
+  if len(matching_inputs) < len(inputs):
+    logging.warning(
+        "Response data has %d prompts while input data has %d. Evaluating %d matching prompts.",
+        len(prompt_to_response),
+        len(inputs),
+        len(matching_inputs),
+    )
+    inputs = matching_inputs
+
+  os.makedirs(_OUTPUT_DIR.value, exist_ok=True)
 
   # get instruction following results
   for func, output_file_name in [
