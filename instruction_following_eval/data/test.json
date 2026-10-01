@@ -1,0 +1,58 @@
+[
+    {
+        "instruction": "Explain the difference between weather and climate.",
+        "response": "Weather refers to the short-term atmospheric conditions at a specific time and place, including temperature, rain, and wind. Climate, on the other hand, is the long-term pattern and average of weather conditions over an extended period, typically 30 years or more. In short, weather is what you get day-to-day, while climate is what you expect over decades."
+    },
+    {
+        "sample_id": "crpl_gpt4_self_instruct_0042",
+        "dataset_source": "Post-training-Data-Flywheel/gpt4-self-instruct",
+        
+        "relational_metadata": {
+            "relationship_type": "superset_specialization",
+            "description": "Bóp nghẹt không gian nghiệm bằng cách thêm ràng buộc độ dài và format vào câu hỏi gốc"
+        },
+
+        "prompt": "Explain the difference between weather and climate.\n\nPlease adhere strictly to the following constraints in your response:\n[Formatting & Structure Constraints]\n- Your entire response must contain exactly 2 sentences.\n- Wrap your entire response in double quotation marks (\"...\").\n\n[Content & Semantic Guidelines]\n- Clearly distinguish between short-term atmospheric variability and long-term 30-year statistical patterns.\n- Maintain an objective, educational tone without conversational greetings.",
+
+        "constraints_spec": {
+            "hard_constraints": [
+            {
+                "id": "length_constraints:number_sentences",
+                "kwargs": {"num_sentences": 2, "relation": "exactly"}
+            },
+            {
+                "id": "startend:quotation",
+                "kwargs": {}
+            }
+            ],
+            "soft_constraints": [
+            {
+                "id": "semantic:time_scale_contrast",
+                "eval_rubric": "Does the response clearly contrast day-to-day conditions with multi-decade/30-year averages? Score 1 if yes, 0 if no."
+            }
+            ]
+        },
+
+        "chosen": "\"Weather refers to short-term atmospheric changes occurring over hours or days, such as daily rain or temperature swings. In contrast, climate represents the statistical pattern and average of those conditions measured over an extended period of 30 years or more.\"",
+
+        "rejected": "Weather refers to the short-term atmospheric conditions at a specific time and place, including temperature, rain, and wind. Climate, on the other hand, is the long-term pattern and average of weather conditions over an extended period, typically 30 years or more. In short, weather is what you get day-to-day, while climate is what you expect over decades.",
+
+        "atomic_verification_log": {
+            "chosen_eval": {
+            "hard_rules_passed": ["length_constraints:number_sentences (2/2)", "startend:quotation (passed)"],
+            "soft_rules_passed": ["semantic:time_scale_contrast (passed)"],
+            "region": "R11_all_satisfied"
+            },
+            "rejected_eval": {
+            "hard_rules_passed": [],
+            "hard_rules_failed": [
+                "length_constraints:number_sentences (Vi phạm: có 3 câu, yêu cầu đúng 2 câu)",
+                "startend:quotation (Vi phạm: thiếu cặp dấu ngoặc kép)"
+            ],
+            "soft_rules_passed": ["semantic:time_scale_contrast (passed)"],
+            "region": "R10_semantic_only",
+            "why_rejected": "Nội dung kiến thức của GPT-4 rất hay nhưng vi phạm hoàn toàn các hard constraints mới được bổ sung."
+            }
+        }
+    }
+]

@@ -538,12 +538,14 @@ def run_augmentation(
                 skipped_existing += 1
                 continue
 
-            # Extract base instruction depending on dataset structure
+            # Extract base instruction and reference response depending on dataset structure
             base_instruction = None
+            reference_response = None
             if "instruction" in item:
                 # Alpaca format
                 inst = item["instruction"]
                 inp = item.get("input", "")
+                reference_response = item.get("output", "")
                 if inp and len(inp.strip()) > 0:
                     base_instruction = f"{inst}\n\nInput Context:\n{inp}"
                 else:
@@ -554,7 +556,8 @@ def run_augmentation(
                 for m in msgs:
                     if m.get("role") == "user":
                         base_instruction = m.get("content")
-                        break
+                    elif m.get("role") == "assistant":
+                        reference_response = m.get("content")
             
             cleaned = clean_instruction(base_instruction)
             if not cleaned:
@@ -570,6 +573,7 @@ def run_augmentation(
                 "key": sample_key,
                 "dataset_source": dataset_name,
                 "base_instruction": cleaned,
+                "reference_response": reference_response,
                 "prompt": aug["prompt"],
                 "num_constraints": aug["num_constraints"],
                 "constraint_type": aug["constraint_type"],
