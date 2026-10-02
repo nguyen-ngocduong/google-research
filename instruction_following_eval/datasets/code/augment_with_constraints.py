@@ -163,6 +163,56 @@ def make_numbered_list() -> Tuple[str, str, Dict[str, Any]]:
     text = f"Format your response as a numbered list with exactly {n} numbered items (1., 2., ...)."
     return "format:numbered_list", text, {"num_items": n}
 
+# 9 Additional IFTrain / IFEval Canonical Constraints
+def make_response_language() -> Tuple[str, str, Dict[str, Any]]:
+    langs = ["Spanish", "French", "German", "Vietnamese"]
+    chosen = random.choice(langs)
+    text = f"Your entire response must be written in {chosen}."
+    return "language:response_language", text, {"language": chosen}
+
+def make_nth_paragraph_first_word() -> Tuple[str, str, Dict[str, Any]]:
+    nth = random.randint(1, 3)
+    words = ["First", "Furthermore", "Finally", "Specifically", "Indeed", "However"]
+    word = random.choice(words)
+    text = f"Paragraph {nth} must start with the word '{word}'."
+    return "length_constraints:nth_paragraph_first_word", text, {"nth_paragraph": nth, "first_word": word}
+
+def make_number_placeholders() -> Tuple[str, str, Dict[str, Any]]:
+    n = random.randint(2, 4)
+    text = f"Include at least {n} placeholders in brackets (e.g. [name], [address], [date]) in your response."
+    return "detectable_content:number_placeholders", text, {"num_placeholders": n}
+
+def make_constrained_response() -> Tuple[str, str, Dict[str, Any]]:
+    options = random.choice([
+        ["Option A", "Option B", "Option C"],
+        ["Agree", "Disagree", "Neutral"],
+        ["Positive", "Negative", "Uncertain"]
+    ])
+    opt_str = ", ".join(f"'{o}'" for o in options)
+    text = f"Your response must strictly be one of the following choices: {opt_str}."
+    return "detectable_format:constrained_response", text, {"constrained_responses": options}
+
+def make_two_responses() -> Tuple[str, str, Dict[str, Any]]:
+    text = "Provide two distinct responses to the prompt. Separate them with six asterisks: ******."
+    return "combination:two_responses", text, {"separator": "******"}
+
+def make_repeat_prompt() -> Tuple[str, str, Dict[str, Any]]:
+    text = "First repeat the request or prompt verbatim, and then provide your response."
+    return "combination:repeat_prompt", text, {}
+
+def make_capital_word_frequency() -> Tuple[str, str, Dict[str, Any]]:
+    n = random.randint(2, 5)
+    text = f"Your response must contain at least {n} capitalized words / words written in ALL CAPS."
+    return "change_case:capital_word_frequency", text, {"capital_words": n}
+
+def make_table_format() -> Tuple[str, str, Dict[str, Any]]:
+    text = "Organize your response or include a section formatted as a Markdown table (using | Column 1 | Column 2 |)."
+    return "detectable_format:table_format", text, {}
+
+def make_no_period() -> Tuple[str, str, Dict[str, Any]]:
+    text = "Do not use any period ('.') anywhere in your entire response."
+    return "punctuation:no_period", text, {}
+
 
 # ==============================================================================
 # 2. Conflict Groups & Compatibility Engine
@@ -293,10 +343,64 @@ SEEN_CONSTRAINT_DEFINITIONS = [
         "func": make_xml_wrapper,
         "group": "XML_TAG",
         "conflicts_with": ["JSON"]
+    },
+    {
+        "id": "language:response_language",
+        "func": make_response_language,
+        "group": "LANGUAGE",
+        "conflicts_with": ["ALL_CAPS", "ALL_LOWER", "END_SENTENCE"]
+    },
+    {
+        "id": "length_constraints:nth_paragraph_first_word",
+        "func": make_nth_paragraph_first_word,
+        "group": "PARAGRAPHS_WORD",
+        "conflicts_with": ["JSON", "ONE_LINE"]
+    },
+    {
+        "id": "detectable_content:number_placeholders",
+        "func": make_number_placeholders,
+        "group": "PLACEHOLDERS",
+        "conflicts_with": ["JSON"]
+    },
+    {
+        "id": "detectable_format:constrained_response",
+        "func": make_constrained_response,
+        "group": "CONSTRAINED_RESP",
+        "conflicts_with": ["LENGTH_WORD", "PARAGRAPHS", "SECTIONS", "LIST_FORMAT", "NUMBERED_LIST", "TABLE", "TWO_RESPONSES"]
+    },
+    {
+        "id": "combination:two_responses",
+        "func": make_two_responses,
+        "group": "TWO_RESPONSES",
+        "conflicts_with": ["JSON", "CONSTRAINED_RESP"]
+    },
+    {
+        "id": "combination:repeat_prompt",
+        "func": make_repeat_prompt,
+        "group": "REPEAT_PROMPT",
+        "conflicts_with": ["JSON", "CONSTRAINED_RESP"]
+    },
+    {
+        "id": "change_case:capital_word_frequency",
+        "func": make_capital_word_frequency,
+        "group": "CAPITAL_WORDS",
+        "conflicts_with": ["ALL_CAPS", "ALL_LOWER"]
+    },
+    {
+        "id": "detectable_format:table_format",
+        "func": make_table_format,
+        "group": "TABLE",
+        "conflicts_with": ["JSON", "LIST_FORMAT", "NUMBERED_LIST", "CONSTRAINED_RESP"]
+    },
+    {
+        "id": "punctuation:no_period",
+        "func": make_no_period,
+        "group": "PUNCTUATION_PERIOD",
+        "conflicts_with": ["JSON"]
     }
 ]
 
-# --- UNSEEN POOL: Out-Of-Domain Verifiable Constraints from IFBench ---
+# --- UNSEEN POOL: 24 Curated Out-Of-Domain Verifiable Constraints from IFBench ---
 def make_unique_words() -> Tuple[str, str, Dict[str, Any]]:
     n = random.randint(25, 60)
     text = f"Your response must contain at least {n} unique words."
@@ -326,42 +430,228 @@ def make_punctuation_count() -> Tuple[str, str, Dict[str, Any]]:
     text = f"Use at least {n} different types of punctuation marks across your entire response."
     return "count:punctuation", text, {"num_punctuation_types": n}
 
+def make_alphabet_loop() -> Tuple[str, str, Dict[str, Any]]:
+    text = "Each word in your response must start with the next letter of the alphabet in sequential order, looping back to 'a' after 'z'."
+    return "words:alphabet_loop", text, {}
+
+def make_prime_lengths() -> Tuple[str, str, Dict[str, Any]]:
+    text = "Every word in your response must have a length (character count) that is a prime number (e.g., 2, 3, 5, 7, 11 letters long)."
+    return "words:prime_lengths", text, {}
+
+def make_nested_quotes() -> Tuple[str, str, Dict[str, Any]]:
+    text = "Include quotes within quotes within quotes, at least 3 levels deep (alternating double and single quotation marks)."
+    return "format:nested_quotes", text, {}
+
+def make_numbers_count() -> Tuple[str, str, Dict[str, Any]]:
+    n = random.randint(3, 6)
+    text = f"Include exactly {n} numbers (written as digits, e.g. 1, 2, 3) in your entire response."
+    return "count:numbers_count", text, {"num_numbers": n}
+
+def make_title_case() -> Tuple[str, str, Dict[str, Any]]:
+    text = "Write your entire response in Title Case (capitalize the first letter of every major word)."
+    return "format:title_case", text, {}
+
+def make_last_word_first_next() -> Tuple[str, str, Dict[str, Any]]:
+    text = "The last word of each sentence must become the first word of the very next sentence."
+    return "sentence:last_word_first_next", text, {}
+
+def make_no_consecutive_first_letter() -> Tuple[str, str, Dict[str, Any]]:
+    text = "No two consecutive words in your response can share the same first letter."
+    return "words:no_consecutive_first_letter", text, {}
+
+def make_limited_repeat() -> Tuple[str, str, Dict[str, Any]]:
+    n = random.randint(3, 5)
+    text = f"Do not repeat any word more than {n} times across your entire response."
+    return "words:limited_repeat", text, {"max_repeats": n}
+
+def make_word_count_step() -> Tuple[str, str, Dict[str, Any]]:
+    step = random.randint(2, 4)
+    text = f"Each subsequent sentence must contain exactly {step} more words than the sentence before it."
+    return "sentence:word_count_step", text, {"step": step}
+
+def make_date_format_list() -> Tuple[str, str, Dict[str, Any]]:
+    n = random.randint(2, 4)
+    text = f"Include at least {n} dates formatted strictly as YYYY-MM-DD separated by commas in your response."
+    return "format:date_format_list", text, {"min_dates": n}
+
+def make_csv_format() -> Tuple[str, str, Dict[str, Any]]:
+    rows = random.randint(3, 5)
+    text = f"Format your entire response as CSV data with exactly {rows} data rows and columns: ID, Name, Category, Value."
+    return "format:csv_format", text, {"num_rows": rows}
+
+def make_output_template() -> Tuple[str, str, Dict[str, Any]]:
+    text = "Use this exact template structure for your response:\nMy Answer: [answer]\nMy Conclusion: [conclusion]\nFuture Outlook: [outlook]"
+    return "format:output_template", text, {}
+
+def make_paragraph_last_first_match() -> Tuple[str, str, Dict[str, Any]]:
+    text = "Each paragraph in your response must end with the exact same word it started with."
+    return "words:paragraph_last_first_match", text, {}
+
+def make_conjunction_count() -> Tuple[str, str, Dict[str, Any]]:
+    n = random.randint(3, 5)
+    text = f"Use at least {n} different coordinating conjunctions (from: and, but, for, nor, or, so, yet) in your response."
+    return "words:conjunction_count", text, {"min_conjunctions": n}
+
+def make_indent_stairs() -> Tuple[str, str, Dict[str, Any]]:
+    text = "Create a staircase effect by incrementally indenting each new line with 2 additional spaces."
+    return "format:indent_stairs", text, {}
+
+def make_special_bullet() -> Tuple[str, str, Dict[str, Any]]:
+    text = "Format your response as a list using '-> ' instead of standard bullet points for every item."
+    return "format:special_bullet", text, {}
+
+def make_no_whitespace() -> Tuple[str, str, Dict[str, Any]]:
+    text = "Your response must not contain any whitespace characters (no spaces, no tabs, no newlines)."
+    return "manipulation:no_whitespace", text, {}
+
+def make_symbol_end() -> Tuple[str, str, Dict[str, Any]]:
+    text = "Every sentence in your response must end with the symbol combination '!*'."
+    return "sentence:symbol_end", text, {}
+
 UNSEEN_CONSTRAINT_DEFINITIONS = [
     {
         "id": "count:unique_word_count",
         "func": make_unique_words,
         "group": "UNIQUE_WORDS",
-        "conflicts_with": []
+        "conflicts_with": ["NO_WHITESPACE"]
     },
     {
         "id": "format:parentheses",
         "func": make_nested_parentheses,
         "group": "PARENTHESES",
-        "conflicts_with": ["JSON"]
+        "conflicts_with": ["JSON", "NO_WHITESPACE"]
     },
     {
         "id": "words:palindrome",
         "func": make_palindrome,
         "group": "PALINDROME",
-        "conflicts_with": ["JSON"]
+        "conflicts_with": ["JSON", "NO_WHITESPACE"]
     },
     {
         "id": "sentence:increment",
         "func": make_sentence_increment,
         "group": "SENTENCE_INCREMENT",
-        "conflicts_with": ["JSON", "ALL_CAPS"]
+        "conflicts_with": ["JSON", "ALL_CAPS", "SENTENCE_STEP", "NO_WHITESPACE"]
     },
     {
         "id": "words:start_verb",
         "func": make_start_verb,
         "group": "START_VERB",
-        "conflicts_with": ["JSON"]
+        "conflicts_with": ["JSON", "NO_WHITESPACE"]
     },
     {
         "id": "count:punctuation",
         "func": make_punctuation_count,
         "group": "PUNCTUATION_DIVERSITY",
-        "conflicts_with": ["PUNCTUATION", "JSON"]
+        "conflicts_with": ["PUNCTUATION", "JSON", "NO_WHITESPACE"]
+    },
+    {
+        "id": "words:alphabet_loop",
+        "func": make_alphabet_loop,
+        "group": "ALPHABET_LOOP",
+        "conflicts_with": ["NO_CONSECUTIVE_LETTER", "PRIME_LENGTHS", "NO_WHITESPACE"]
+    },
+    {
+        "id": "words:prime_lengths",
+        "func": make_prime_lengths,
+        "group": "PRIME_LENGTHS",
+        "conflicts_with": ["ALPHABET_LOOP", "NO_WHITESPACE"]
+    },
+    {
+        "id": "format:nested_quotes",
+        "func": make_nested_quotes,
+        "group": "NESTED_QUOTES",
+        "conflicts_with": ["JSON", "NO_WHITESPACE"]
+    },
+    {
+        "id": "count:numbers_count",
+        "func": make_numbers_count,
+        "group": "NUMBERS_COUNT",
+        "conflicts_with": ["JSON"]
+    },
+    {
+        "id": "format:title_case",
+        "func": make_title_case,
+        "group": "TITLE_CASE",
+        "conflicts_with": ["ALL_CAPS", "ALL_LOWER", "JSON", "NO_WHITESPACE"]
+    },
+    {
+        "id": "sentence:last_word_first_next",
+        "func": make_last_word_first_next,
+        "group": "LAST_FIRST_CHAIN",
+        "conflicts_with": ["JSON", "NO_WHITESPACE"]
+    },
+    {
+        "id": "words:no_consecutive_first_letter",
+        "func": make_no_consecutive_first_letter,
+        "group": "NO_CONSECUTIVE_LETTER",
+        "conflicts_with": ["ALPHABET_LOOP", "NO_WHITESPACE"]
+    },
+    {
+        "id": "words:limited_repeat",
+        "func": make_limited_repeat,
+        "group": "LIMITED_REPEAT",
+        "conflicts_with": ["JSON", "NO_WHITESPACE"]
+    },
+    {
+        "id": "sentence:word_count_step",
+        "func": make_word_count_step,
+        "group": "SENTENCE_STEP",
+        "conflicts_with": ["SENTENCE_INCREMENT", "JSON", "NO_WHITESPACE"]
+    },
+    {
+        "id": "format:date_format_list",
+        "func": make_date_format_list,
+        "group": "DATE_FORMAT",
+        "conflicts_with": ["JSON", "NO_WHITESPACE"]
+    },
+    {
+        "id": "format:csv_format",
+        "func": make_csv_format,
+        "group": "CSV_FORMAT",
+        "conflicts_with": ["JSON", "NO_WHITESPACE", "OUTPUT_TEMPLATE", "INDENT_STAIRS"]
+    },
+    {
+        "id": "format:output_template",
+        "func": make_output_template,
+        "group": "OUTPUT_TEMPLATE",
+        "conflicts_with": ["CSV_FORMAT", "JSON", "NO_WHITESPACE"]
+    },
+    {
+        "id": "words:paragraph_last_first_match",
+        "func": make_paragraph_last_first_match,
+        "group": "PARA_MATCH",
+        "conflicts_with": ["JSON", "NO_WHITESPACE"]
+    },
+    {
+        "id": "words:conjunction_count",
+        "func": make_conjunction_count,
+        "group": "CONJUNCTION_COUNT",
+        "conflicts_with": ["JSON", "NO_WHITESPACE"]
+    },
+    {
+        "id": "format:indent_stairs",
+        "func": make_indent_stairs,
+        "group": "INDENT_STAIRS",
+        "conflicts_with": ["CSV_FORMAT", "JSON", "NO_WHITESPACE"]
+    },
+    {
+        "id": "format:special_bullet",
+        "func": make_special_bullet,
+        "group": "SPECIAL_BULLET",
+        "conflicts_with": ["JSON", "CSV_FORMAT", "NO_WHITESPACE"]
+    },
+    {
+        "id": "manipulation:no_whitespace",
+        "func": make_no_whitespace,
+        "group": "NO_WHITESPACE",
+        "conflicts_with": ["UNIQUE_WORDS", "PARENTHESES", "PALINDROME", "SENTENCE_INCREMENT", "START_VERB", "PUNCTUATION_DIVERSITY", "ALPHABET_LOOP", "PRIME_LENGTHS", "NESTED_QUOTES", "TITLE_CASE", "LAST_FIRST_CHAIN", "NO_CONSECUTIVE_LETTER", "LIMITED_REPEAT", "SENTENCE_STEP", "DATE_FORMAT", "CSV_FORMAT", "OUTPUT_TEMPLATE", "PARA_MATCH", "CONJUNCTION_COUNT", "INDENT_STAIRS", "SPECIAL_BULLET", "SYMBOL_END"]
+    },
+    {
+        "id": "sentence:symbol_end",
+        "func": make_symbol_end,
+        "group": "SYMBOL_END",
+        "conflicts_with": ["JSON", "NO_WHITESPACE"]
     }
 ]
 
@@ -597,6 +887,18 @@ def run_augmentation(
 
     final_total = existing_count + saved_this_run
     print(f"Done! Newly added: {saved_this_run}. Total samples in '{output_path}': {final_total}")
+
+    # Automatically sync formatted .json file
+    if output_path.endswith('.jsonl'):
+        json_path = output_path[:-1]
+        try:
+            with open(output_path, 'r', encoding='utf-8') as f_in:
+                all_records = [json.loads(line) for line in f_in if line.strip()]
+            with open(json_path, 'w', encoding='utf-8') as f_json:
+                json.dump(all_records, f_json, indent=2, ensure_ascii=False)
+            print(f"✓ Synced {len(all_records)} records to formatted JSON: '{json_path}'")
+        except Exception as e:
+            print(f"Warning: Could not sync .json: {e}")
 
 
 if __name__ == "__main__":

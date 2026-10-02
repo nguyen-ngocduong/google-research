@@ -23,7 +23,7 @@ Trong quá trình huấn luyện và đánh giá năng lực tuân thủ chỉ d
 
 ## 2. Các Nguyên Lý Then Chốt Từ Bài Báo Đã Được Áp Dụng Vào Task 1
 
-Dựa trên các phát hiện thực nghiệm và mã nguồn của bài báo, pipeline sinh dữ liệu tại [`datasets/augment_with_constraints.py`](file:///home/admin123/Desktop/dataocubuntu/desktop/google-research/instruction_following_eval/datasets/augment_with_constraints.py) đã áp dụng 6 nguyên lý cốt lõi sau:
+Dựa trên các phát hiện thực nghiệm và mã nguồn của bài báo, pipeline sinh dữ liệu tại [`datasets/code/augment_with_constraints.py`](file:///home/admin123/Desktop/dataocubuntu/desktop/google-research/instruction_following_eval/datasets/code/augment_with_constraints.py) đã áp dụng 6 nguyên lý cốt lõi sau:
 
 ### Nguyên lý 1: Phân tách rạch ròi SEEN vs. UNSEEN (Tránh Data Contamination)
 * **Ý tưởng bài báo:** Để chứng minh năng lực generalization, ta bắt buộc phải phân tách hai tập ràng buộc độc lập tuyệt đối:
@@ -149,10 +149,10 @@ Dựa trên các phát hiện thực nghiệm và mã nguồn của bài báo, p
 Các tập dữ liệu đã được tạo sẵn trong thư mục [`datasets/`](file:///home/admin123/Desktop/dataocubuntu/desktop/google-research/instruction_following_eval/datasets):
 
 1. **Tập Huấn Luyện (Training Set - Seen Split):**
-   * [`datasets/augmented_alpaca_gpt4.jsonl`](file:///home/admin123/Desktop/dataocubuntu/desktop/google-research/instruction_following_eval/datasets/augmented_alpaca_gpt4.jsonl) & [`.json`](file:///home/admin123/Desktop/dataocubuntu/desktop/google-research/instruction_following_eval/datasets/augmented_alpaca_gpt4.json) (1.000 mẫu, `constraint_split="seen"`)
-   * [`datasets/augmented_gpt4_self_instruct.jsonl`](file:///home/admin123/Desktop/dataocubuntu/desktop/google-research/instruction_following_eval/datasets/augmented_gpt4_self_instruct.jsonl) & [`.json`](file:///home/admin123/Desktop/dataocubuntu/desktop/google-research/instruction_following_eval/datasets/augmented_gpt4_self_instruct.json) (1.000 mẫu, `constraint_split="seen"`)
+   * [`datasets/seen/augmented_alpaca_gpt4.jsonl`](file:///home/admin123/Desktop/dataocubuntu/desktop/google-research/instruction_following_eval/datasets/seen/augmented_alpaca_gpt4.jsonl) & [`.json`](file:///home/admin123/Desktop/dataocubuntu/desktop/google-research/instruction_following_eval/datasets/seen/augmented_alpaca_gpt4.json) (1.000 mẫu, `constraint_split="seen"`)
+   * [`datasets/seen/augmented_gpt4_self_instruct.jsonl`](file:///home/admin123/Desktop/dataocubuntu/desktop/google-research/instruction_following_eval/datasets/seen/augmented_gpt4_self_instruct.jsonl) & [`.json`](file:///home/admin123/Desktop/dataocubuntu/desktop/google-research/instruction_following_eval/datasets/seen/augmented_gpt4_self_instruct.json) (1.000 mẫu, `constraint_split="seen"`)
 2. **Tập Kiểm Thử Ngoại Miền (Evaluation Set - Unseen OOD Split):**
-   * [`datasets/eval_unseen_constraints.jsonl`](file:///home/admin123/Desktop/dataocubuntu/desktop/google-research/instruction_following_eval/datasets/eval_unseen_constraints.jsonl) & [`.json`](file:///home/admin123/Desktop/dataocubuntu/desktop/google-research/instruction_following_eval/datasets/eval_unseen_constraints.json) (200 mẫu OOD, `constraint_split="unseen"`)
+   * [`datasets/unseen/eval_unseen_constraints.jsonl`](file:///home/admin123/Desktop/dataocubuntu/desktop/google-research/instruction_following_eval/datasets/unseen/eval_unseen_constraints.jsonl) & [`.json`](file:///home/admin123/Desktop/dataocubuntu/desktop/google-research/instruction_following_eval/datasets/unseen/eval_unseen_constraints.json) (200 mẫu OOD, `constraint_split="unseen"`)
 
 ---
 

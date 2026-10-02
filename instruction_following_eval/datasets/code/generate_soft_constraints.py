@@ -97,61 +97,54 @@ def build_soft_constraint_meta_prompt(
 
     if split == "unseen":
         task_instruction = """We are constructing an Out-Of-Domain (UNSEEN) evaluation benchmark for Instruction Following (Double-OOD Generalization).
-In the training (SEEN) set, models were trained exclusively on basic 'semantic_completeness' and generic 'style_and_tone'.
-To rigorously evaluate the model's true generalization capacity on novel, unobserved soft constraints, you MUST REVERSE-ENGINEER 1 to 2 novel SOFT CONSTRAINTS chosen strictly from the following OUT-OF-DOMAIN (UNSEEN) categories (DO NOT use standard 'semantic_completeness' or simple 'style_and_tone'):
+In the training (SEEN) set, models were trained on in-domain categories (such as semantic completeness, general style, clarity, conciseness, practical examples).
+To rigorously evaluate the model's true generalization capacity on novel, unobserved soft constraints, you MUST REVERSE-ENGINEER 1 to 2 novel SOFT CONSTRAINTS chosen strictly from the following 7 OUT-OF-DOMAIN (UNSEEN) categories:
 
 OUT-OF-DOMAIN (UNSEEN) CATEGORIES:
-1. 'target_audience': Explicitly adapt the depth, tone, and framing for a specific audience profile (e.g. elementary school students, non-technical beginners, executive decision-makers, peer researchers).
-2. 'reasoning_and_logic': Require explicit multi-step reasoning, explaining the cause-and-effect mechanism or comparative rationale behind recommendations.
-3. 'role_play_persona': Strictly maintain a distinctive professional, occupational, or historical persona (e.g. a seasoned investigative journalist, a senior safety inspector, an ancient historian).
-4. 'counterfactual_context': Adhere strictly to a counterfactual, hypothetical, or scenario-bounded premise.
+1. 'target_audience': Explicitly adapt the depth, vocabulary, and framing for a specific audience profile (e.g. elementary school students, non-technical beginners, executive decision-makers, peer researchers).
+2. 'reasoning_and_logic': Require explicit multi-step reasoning, explaining the underlying cause-and-effect mechanism or comparative rationale behind recommendations.
+3. 'role_play_persona': Strictly maintain a distinctive professional, occupational, or historical persona (e.g. an investigative journalist, a senior safety inspector, an ancient Roman historian).
+4. 'counterfactual_context': Adhere strictly to a counterfactual, hypothetical, or scenario-bounded premise (e.g. 'assuming electricity was never discovered').
 5. 'safety_and_neutrality': Present balanced multi-perspective views objectively without taking sides on contentious matters.
+6. 'pedagogical_analogy': Mandate the use of an intuitive, real-world physical analogy or metaphor to demystify complex conceptual mechanics.
+7. 'critique_and_limitations': Explicitly articulate potential vulnerabilities, failure modes, boundary conditions, or ethical trade-offs.
 
 Select 1 or 2 UNSEEN categories that fit naturally with the Base Instruction and Gold Response.
 """
         json_example = """[
   {
     "id": "<unseen_category>:<concise_identifier>",
-    "category": "<target_audience | reasoning_and_logic | role_play_persona | counterfactual_context | safety_and_neutrality>",
+    "category": "<target_audience | reasoning_and_logic | role_play_persona | counterfactual_context | safety_and_neutrality | pedagogical_analogy | critique_and_limitations>",
     "description": "<Clear instruction specifying the novel requirement>",
     "eval_rubric": "<Clear evaluation criteria for an LLM Judge returning binary 1 (pass) or 0 (fail)>"
   }
 ]"""
     elif reference_response and len(reference_response.strip()) > 10:
         task_instruction = """We have an instruction task with existing hard constraints, along with an expert Gold Reference Response.
-Your goal is to REVERSE-ENGINEER 1 to 2 meaningful, non-conflicting SOFT CONSTRAINTS (categories: 'semantic_completeness' and 'style_and_tone') that capture the key qualities of the Gold Response, turning them into explicit requirements for the student model.
+Your goal is to REVERSE-ENGINEER 1 to 2 meaningful, non-conflicting SOFT CONSTRAINTS chosen from the following 5 SEEN IN-DOMAIN categories that capture the key qualities of the Gold Response, turning them into explicit requirements for the student model:
 
-GUIDANCE FOR REVERSE-ENGINEERING:
-1. Category 'semantic_completeness': Identify the core conceptual pillars, principles, or depth of analysis demonstrated in the Gold Response. Frame this as a clear requirement (e.g. 'Must cover both X and Y aspects'). DO NOT copy verbatim trivia, exact numbers, or leak the exact answer.
-2. Category 'style_and_tone': Identify the persona, professional register, or stylistic tone displayed in the Gold Response (e.g. 'Maintain an authoritative yet accessible clinical tone').
+SEEN IN-DOMAIN CATEGORIES:
+1. 'semantic_completeness': Identify core conceptual pillars or depth of analysis demonstrated in the Gold Response. Frame this as a clear requirement (e.g. 'Must cover both X and Y aspects'). DO NOT copy verbatim trivia or leak exact numbers.
+2. 'style_and_tone': Specify the professional register, tone, or stylistic stance displayed in the Gold Response (e.g. 'Maintain an authoritative, objective, and accessible clinical tone').
+3. 'clarity_and_coherence': Require logical argumentation flow, clear conceptual progression, and transparent transitions between distinct ideas.
+4. 'conciseness_and_efficiency': Require dense, high-impact prose that avoids fluff, filler, repetitive phrasing, and boilerplate preambles.
+5. 'practical_examples': Require concrete illustrative scenarios, real-world case studies, or actionable step-by-step illustrations.
 """
         json_example = """[
   {
-    "id": "semantic:<concise_identifier>",
-    "category": "semantic_completeness",
-    "description": "<Clear instruction specifying what specific semantic depth or key concept must be covered>",
-    "eval_rubric": "<Clear evaluation criteria for an LLM Judge returning binary 1 (pass) or 0 (fail)>"
-  },
-  {
-    "id": "tone:<concise_identifier>",
-    "category": "style_and_tone",
-    "description": "<Clear instruction specifying the tone, register, or style to maintain>",
+    "id": "<seen_category>:<concise_identifier>",
+    "category": "<semantic_completeness | style_and_tone | clarity_and_coherence | conciseness_and_efficiency | practical_examples>",
+    "description": "<Clear instruction specifying what specific semantic depth, style, clarity, or example must be provided>",
     "eval_rubric": "<Clear evaluation criteria for an LLM Judge returning binary 1 (pass) or 0 (fail)>"
   }
 ]"""
     else:
-        task_instruction = """We have an instruction task that already has hard constraints. Your goal is to generate 1 to 2 meaningful, non-conflicting SOFT CONSTRAINTS (categories: 'semantic_completeness' and 'style_and_tone') that test whether the model truly understands the subject matter and does not just 'hack' the hard formatting constraints."""
+        task_instruction = """We have an instruction task that already has hard constraints. Your goal is to generate 1 to 2 meaningful, non-conflicting SOFT CONSTRAINTS chosen from the 5 SEEN categories ('semantic_completeness', 'style_and_tone', 'clarity_and_coherence', 'conciseness_and_efficiency', 'practical_examples') that test whether the model truly understands the subject matter and does not just 'hack' the hard formatting constraints."""
         json_example = """[
   {
-    "id": "semantic:<concise_identifier>",
-    "category": "semantic_completeness",
-    "description": "<Clear instruction specifying what specific semantic depth or key concept must be covered>",
-    "eval_rubric": "<Clear evaluation criteria for an LLM Judge returning binary 1 (pass) or 0 (fail)>"
-  },
-  {
-    "id": "tone:<concise_identifier>",
-    "category": "style_and_tone",
-    "description": "<Clear instruction specifying the tone, register, or style to maintain>",
+    "id": "<seen_category>:<concise_identifier>",
+    "category": "<semantic_completeness | style_and_tone | clarity_and_coherence | conciseness_and_efficiency | practical_examples>",
+    "description": "<Clear instruction specifying what specific semantic depth, style, or quality must be covered>",
     "eval_rubric": "<Clear evaluation criteria for an LLM Judge returning binary 1 (pass) or 0 (fail)>"
   }
 ]"""
@@ -409,12 +402,12 @@ def main():
     )
     parser.add_argument(
         "--input",
-        default="datasets/augmented_alpaca_gpt4.jsonl",
+        default="datasets/seen/augmented_alpaca_gpt4.jsonl",
         help="Input JSON or JSONL file with hard constraints",
     )
     parser.add_argument(
         "--output",
-        default="datasets/task2_hybrid_alpaca_gpt4.jsonl",
+        default="datasets/seen/task2_hybrid_alpaca_gpt4.jsonl",
         help="Output JSONL file (a pretty .json file will also be synced)",
     )
     parser.add_argument(
@@ -500,10 +493,21 @@ def main():
         logger.error("No GOOGLE_API_KEY found. Please set it in .env or via --api-key.")
         sys.exit(1)
 
-    # Resolve paths
-    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    input_path = args.input if os.path.isabs(args.input) else os.path.join(base_dir, args.input)
-    output_path = args.output if os.path.isabs(args.output) else os.path.join(base_dir, args.output)
+    # Resolve paths robustly
+    repo_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    if os.path.isabs(args.input):
+        input_path = args.input
+    elif os.path.isfile(args.input):
+        input_path = os.path.abspath(args.input)
+    else:
+        input_path = os.path.join(repo_root, args.input)
+
+    if os.path.isabs(args.output):
+        output_path = args.output
+    elif os.path.exists(os.path.dirname(os.path.abspath(args.output))):
+        output_path = os.path.abspath(args.output)
+    else:
+        output_path = os.path.join(repo_root, args.output)
 
     if not os.path.isfile(input_path):
         logger.error("Input file not found: %s", input_path)
