@@ -1,0 +1,7 @@
+.env
+*.json
+*.jsonl
+*.ipynb
+*.txt
+*.pdf
+*.md

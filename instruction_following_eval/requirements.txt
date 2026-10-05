@@ -1,4 +1,9 @@
-absl
+absl-py
 langdetect
 nltk
 immutabledict
+openai
+google-genai
+datasets
+tqdm
+python-dotenv
