@@ -121,15 +121,17 @@ def verify_hard_constraint_detailed(inst_id: str, kwargs: Dict[str, Any], respon
 
     # 1.2. Keywords: Frequency
     if inst_id == "keywords:frequency":
-        kw = normalize_vi(kwargs.get("keyword", "")).lower()
+        kw = normalize_vi(kwargs.get("keyword", "")).strip().lower()
         freq = kwargs.get("frequency", 0)
         rel = kwargs.get("relation", "at least")
-        words = [w.lower() for w in get_words_vi(text)]
-        count = words.count(kw)
+        # Sử dụng regex boundary để khớp chính xác cả từ đơn và từ ghép tiếng Việt (ví dụ: 'giải pháp', 'công nghệ')
+        pattern = rf"(?i)(?<!\w){re.escape(kw)}(?!\w)"
+        count = len(re.findall(pattern, text))
         if rel == "at least": passed = (count >= freq)
         elif rel == "at most": passed = (count <= freq)
         else: passed = (count == freq)
         return passed, f"Từ '{kw}' xuất hiện {count} lần (yêu cầu {rel} {freq})"
+
 
     # 1.3. Keywords: Forbidden Words
     if inst_id == "keywords:forbidden_words":
@@ -296,13 +298,19 @@ def verify_hard_constraint_detailed(inst_id: str, kwargs: Dict[str, Any], respon
     # 1.22. Length: Nth Paragraph First Word
     if inst_id == "length_constraints:nth_paragraph_first_word":
         nth = kwargs.get("nth_paragraph", 1)
-        word = normalize_vi(kwargs.get("first_word", "")).lower()
+        word = normalize_vi(kwargs.get("first_word", "")).strip().lower()
         paras = [p.strip() for p in re.split(r'\n\s*\n', text) if p.strip()]
         if len(paras) < nth:
             return False, f"Chỉ có {len(paras)} đoạn, không đủ {nth} đoạn"
         target_words = get_words_vi(paras[nth - 1])
-        first_w = target_words[0].lower() if target_words else ""
-        passed = (first_w == word)
+        word_tokens = get_words_vi(word)
+        if len(word_tokens) > 1:
+            first_n = [w.lower() for w in target_words[:len(word_tokens)]]
+            passed = (first_n == [w.lower() for w in word_tokens])
+            first_w = " ".join(first_n)
+        else:
+            first_w = target_words[0].lower() if target_words else ""
+            passed = (first_w == word)
         return passed, f"Từ đầu đoạn {nth} là '{first_w}' (yêu cầu '{word}')"
 
     # 1.23. Detectable Content: Placeholders
@@ -633,7 +641,10 @@ def evaluate_instruction_following_vi(response_text: str, verifier_spec: Any) ->
     for item in flat_items:
         inst_id = item.get("id")
         kwargs = item.get("kwargs", {})
-        passed, note = verify_hard_constraint_detailed(inst_id, kwargs, response_text)
+        try:
+            passed, note = verify_hard_constraint_detailed(inst_id, kwargs, response_text)
+        except Exception as e:
+            passed, note = False, f"Verifier Error ({type(e).__name__}): {e}"
         if passed:
             passed_count += 1
         details.append({"id": inst_id, "passed": passed, "note": note})
