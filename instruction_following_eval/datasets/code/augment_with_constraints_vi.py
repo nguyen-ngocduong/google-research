@@ -371,66 +371,147 @@ def make_unseen_symbol_end() -> Tuple[str, str, Dict[str, Any]]:
 
 
 UNSEEN_CONSTRAINT_DEFINITIONS = [
-    {"id": "count:unique_word_count", "func": make_unseen_unique_words, "group": "UNIQUE_WORDS", "conflicts_with": ["NO_WHITESPACE"]},
-    {"id": "format:parentheses", "func": make_unseen_parentheses, "group": "PARENTHESES", "conflicts_with": ["NO_WHITESPACE"]},
-    {"id": "words:palindrome", "func": make_unseen_palindrome, "group": "PALINDROME", "conflicts_with": ["NO_WHITESPACE"]},
-    {"id": "sentence:increment", "func": make_unseen_sentence_increment, "group": "SENTENCE_INCREMENT", "conflicts_with": ["SENTENCE_STEP", "NO_WHITESPACE"]},
-    {"id": "words:start_verb", "func": make_unseen_start_verb, "group": "START_VERB", "conflicts_with": ["NO_WHITESPACE"]},
-    {"id": "count:punctuation", "func": make_unseen_count_punctuation, "group": "PUNCT_DIVERSITY", "conflicts_with": ["NO_WHITESPACE"]},
-    {"id": "words:alphabet_loop", "func": make_unseen_alphabet_loop, "group": "ALPHABET_LOOP", "conflicts_with": ["NO_CONSEC_LETTER", "PRIME_LENGTHS", "NO_WHITESPACE"]},
-    {"id": "words:prime_lengths", "func": make_unseen_prime_lengths, "group": "PRIME_LENGTHS", "conflicts_with": ["ALPHABET_LOOP", "NO_WHITESPACE"]},
-    {"id": "format:nested_quotes", "func": make_unseen_nested_quotes, "group": "NESTED_QUOTES", "conflicts_with": ["NO_WHITESPACE"]},
-    {"id": "count:numbers_count", "func": make_unseen_numbers_count, "group": "NUMBERS_COUNT", "conflicts_with": ["NO_WHITESPACE"]},
-    {"id": "format:title_case", "func": make_unseen_title_case, "group": "TITLE_CASE", "conflicts_with": ["NO_WHITESPACE"]},
-    {"id": "sentence:last_word_first_next", "func": make_unseen_last_first_chain, "group": "CHAIN_WORDS", "conflicts_with": ["NO_WHITESPACE"]},
-    {"id": "words:no_consecutive_first_letter", "func": make_unseen_no_consecutive_letter, "group": "NO_CONSEC_LETTER", "conflicts_with": ["ALPHABET_LOOP", "NO_WHITESPACE"]},
-    {"id": "words:limited_repeat", "func": make_unseen_limited_repeat, "group": "LIMITED_REPEAT", "conflicts_with": ["NO_WHITESPACE"]},
-    {"id": "sentence:word_count_step", "func": make_unseen_word_count_step, "group": "SENTENCE_STEP", "conflicts_with": ["SENTENCE_INCREMENT", "NO_WHITESPACE"]},
-    {"id": "format:date_format_list", "func": make_unseen_date_format_list, "group": "DATE_FORMAT", "conflicts_with": ["NO_WHITESPACE"]},
-    {"id": "format:csv_format", "func": make_unseen_csv_format, "group": "CSV_FORMAT", "conflicts_with": ["OUTPUT_TEMPLATE", "INDENT_STAIRS", "NO_WHITESPACE"]},
-    {"id": "format:output_template", "func": make_unseen_output_template, "group": "OUTPUT_TEMPLATE", "conflicts_with": ["CSV_FORMAT", "NO_WHITESPACE"]},
-    {"id": "words:paragraph_last_first_match", "func": make_unseen_paragraph_match, "group": "PARA_MATCH", "conflicts_with": ["NO_WHITESPACE"]},
-    {"id": "words:conjunction_count", "func": make_unseen_conjunction_count, "group": "CONJUNCTION_COUNT", "conflicts_with": ["NO_WHITESPACE"]},
-    {"id": "format:indent_stairs", "func": make_unseen_indent_stairs, "group": "INDENT_STAIRS", "conflicts_with": ["CSV_FORMAT", "NO_WHITESPACE"]},
-    {"id": "format:special_bullet", "func": make_unseen_special_bullet, "group": "SPECIAL_BULLET", "conflicts_with": ["NO_WHITESPACE"]},
-    {"id": "manipulation:no_whitespace", "func": make_unseen_no_whitespace, "group": "NO_WHITESPACE", "conflicts_with": [
-        "UNIQUE_WORDS", "PARENTHESES", "PALINDROME", "SENTENCE_INCREMENT", "START_VERB", "PUNCT_DIVERSITY",
-        "ALPHABET_LOOP", "PRIME_LENGTHS", "NESTED_QUOTES", "NUMBERS_COUNT", "TITLE_CASE", "CHAIN_WORDS",
-        "NO_CONSEC_LETTER", "LIMITED_REPEAT", "SENTENCE_STEP", "DATE_FORMAT", "CSV_FORMAT", "OUTPUT_TEMPLATE",
-        "PARA_MATCH", "CONJUNCTION_COUNT", "INDENT_STAIRS", "SPECIAL_BULLET", "SYMBOL_END"
-    ]},
-    {"id": "sentence:symbol_end", "func": make_unseen_symbol_end, "group": "SYMBOL_END", "conflicts_with": ["NO_WHITESPACE"]}
+    {"id": "count:unique_word_count", "func": make_unseen_unique_words, "group": "UNIQUE_WORDS", "conflicts_with": []},
+    {"id": "format:parentheses", "func": make_unseen_parentheses, "group": "PARENTHESES", "conflicts_with": []},
+    {"id": "words:palindrome", "func": make_unseen_palindrome, "group": "PALINDROME", "conflicts_with": []},
+    {"id": "sentence:increment", "func": make_unseen_sentence_increment, "group": "SENTENCE_INCREMENT", "conflicts_with": ["SENTENCE_STEP"]},
+    {"id": "words:start_verb", "func": make_unseen_start_verb, "group": "START_VERB", "conflicts_with": []},
+    {"id": "count:punctuation", "func": make_unseen_count_punctuation, "group": "PUNCT_DIVERSITY", "conflicts_with": []},
+    {"id": "words:alphabet_loop", "func": make_unseen_alphabet_loop, "group": "ALPHABET_LOOP", "conflicts_with": ["NO_CONSEC_LETTER", "PRIME_LENGTHS"]},
+    {"id": "words:prime_lengths", "func": make_unseen_prime_lengths, "group": "PRIME_LENGTHS", "conflicts_with": ["ALPHABET_LOOP"]},
+    {"id": "format:nested_quotes", "func": make_unseen_nested_quotes, "group": "NESTED_QUOTES", "conflicts_with": []},
+    {"id": "count:numbers_count", "func": make_unseen_numbers_count, "group": "NUMBERS_COUNT", "conflicts_with": []},
+    {"id": "format:title_case", "func": make_unseen_title_case, "group": "TITLE_CASE", "conflicts_with": []},
+    {"id": "sentence:last_word_first_next", "func": make_unseen_last_first_chain, "group": "CHAIN_WORDS", "conflicts_with": []},
+    {"id": "words:no_consecutive_first_letter", "func": make_unseen_no_consecutive_letter, "group": "NO_CONSEC_LETTER", "conflicts_with": ["ALPHABET_LOOP"]},
+    {"id": "words:limited_repeat", "func": make_unseen_limited_repeat, "group": "LIMITED_REPEAT", "conflicts_with": []},
+    {"id": "sentence:word_count_step", "func": make_unseen_word_count_step, "group": "SENTENCE_STEP", "conflicts_with": ["SENTENCE_INCREMENT"]},
+    {"id": "format:date_format_list", "func": make_unseen_date_format_list, "group": "DATE_FORMAT", "conflicts_with": []},
+    {"id": "format:csv_format", "func": make_unseen_csv_format, "group": "CSV_FORMAT", "conflicts_with": ["OUTPUT_TEMPLATE", "INDENT_STAIRS"]},
+    {"id": "format:output_template", "func": make_unseen_output_template, "group": "OUTPUT_TEMPLATE", "conflicts_with": ["CSV_FORMAT", "INDENT_STAIRS"]},
+    {"id": "words:paragraph_last_first_match", "func": make_unseen_paragraph_match, "group": "PARA_MATCH", "conflicts_with": []},
+    {"id": "words:conjunction_count", "func": make_unseen_conjunction_count, "group": "CONJUNCTION_COUNT", "conflicts_with": []},
+    {"id": "format:indent_stairs", "func": make_unseen_indent_stairs, "group": "INDENT_STAIRS", "conflicts_with": ["CSV_FORMAT", "OUTPUT_TEMPLATE"]},
+    {"id": "format:special_bullet", "func": make_unseen_special_bullet, "group": "SPECIAL_BULLET", "conflicts_with": []},
+    {"id": "manipulation:no_whitespace", "func": make_unseen_no_whitespace, "group": "NO_WHITESPACE", "conflicts_with": ["*"]},
+    {"id": "sentence:symbol_end", "func": make_unseen_symbol_end, "group": "SYMBOL_END", "conflicts_with": []}
 ]
 
 
-def sample_compatible_constraints(k: int, pool: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-    """Lấy mẫu k ràng buộc không xung đột từ tập pool chỉ định."""
-    available = list(pool)
-    selected = []
-    forbidden_groups = set()
+# ==============================================================================
+# 3. ĐỐI XỨNG HÓA VÀ KIỂM TRA MA TRẬN XUNG ĐỘT (Conflict Closure & Verification)
+# ==============================================================================
 
-    random.shuffle(available)
+def make_symmetric_conflicts(pool: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """
+    Chuẩn hóa và đối xứng hóa ma trận xung đột (Symmetric Conflict Closure):
+    1. Ký hiệu '*': mở rộng xung đột ra tất cả các group còn lại trong pool.
+    2. Đảm bảo tính đối xứng 2 chiều: Nếu group A xung đột group B thì group B tự động xung đột group A.
+    """
+    all_groups = {item["group"] for item in pool}
+    conflict_map = {g: set() for g in all_groups}
 
-    for item in available:
-        if len(selected) >= k:
-            break
-        if item["group"] in forbidden_groups:
-            continue
-        selected_groups = {it["group"] for it in selected}
-        if any(g in selected_groups for g in item.get("conflicts_with", [])):
-            continue
+    for item in pool:
+        g = item["group"]
+        for c in item.get("conflicts_with", []):
+            if c == "*":
+                conflict_map[g].update(all_groups - {g})
+            else:
+                conflict_map[g].add(c)
 
-        selected.append(item)
-        forbidden_groups.add(item["group"])
-        forbidden_groups.update(item.get("conflicts_with", []))
+    # Đóng bao đối xứng (Symmetric closure)
+    for g, c_set in list(conflict_map.items()):
+        for target in list(c_set):
+            if target in conflict_map:
+                conflict_map[target].add(g)
 
-    return selected
+    for item in pool:
+        item["conflicts_with"] = sorted(list(conflict_map[item["group"]]))
+
+    return pool
 
 
-def augment_instruction_vi(base_text: str, k: int, split: str = "seen") -> Dict[str, Any]:
+def validate_conflict_symmetry(pool_name: str, pool: List[Dict[str, Any]]) -> bool:
+    """Kiểm tra ma trận xung đột: A xung đột B <=> B xung đột A."""
+    group_conflicts = {item["group"]: set(item.get("conflicts_with", [])) for item in pool}
+    for g1, confs in group_conflicts.items():
+        for g2 in confs:
+            if g1 not in group_conflicts.get(g2, set()):
+                raise AssertionError(
+                    f"❌ Lỗi bất đối xứng trong {pool_name}: {g1} xung đột {g2} nhưng {g2} không xung đột {g1}!"
+                )
+    return True
+
+
+# Tự động đóng đối xứng và kiểm tra lúc import
+SEEN_CONSTRAINT_DEFINITIONS = make_symmetric_conflicts(SEEN_CONSTRAINT_DEFINITIONS)
+UNSEEN_CONSTRAINT_DEFINITIONS = make_symmetric_conflicts(UNSEEN_CONSTRAINT_DEFINITIONS)
+validate_conflict_symmetry("SEEN", SEEN_CONSTRAINT_DEFINITIONS)
+validate_conflict_symmetry("UNSEEN", UNSEEN_CONSTRAINT_DEFINITIONS)
+
+
+def sample_compatible_constraints(
+    k: int,
+    pool: List[Dict[str, Any]],
+    rng: Optional[random.Random] = None,
+    max_retries: int = 50
+) -> List[Dict[str, Any]]:
+    """
+    Lấy mẫu k ràng buộc không xung đột từ tập pool chỉ định:
+    - Nhận bộ sinh ngẫu nhiên độc lập `rng` (random.Random).
+    - Sử dụng retry loop để bảo đảm len(selected) == k 100% thời gian.
+    - Nếu k > 1, loại bỏ các luật xung đột toàn bộ (universal conflict như NO_WHITESPACE)
+      ngay từ đầu để tránh bế tắc logic.
+    - Báo lỗi rõ ràng nếu không lấy đủ sau max_retries thay vì âm thầm trả về ít hơn.
+    """
+    if rng is None:
+        rng = random.Random()
+
+    all_groups = {it["group"] for it in pool}
+
+    # Nếu k > 1, loại trừ các luật xung đột toàn bộ (như NO_WHITESPACE) khỏi ứng viên
+    if k > 1:
+        candidates_pool = [it for it in pool if len(set(it.get("conflicts_with", []))) < len(all_groups) - 1]
+    else:
+        candidates_pool = list(pool)
+
+    for attempt in range(max_retries):
+        available = list(candidates_pool)
+        rng.shuffle(available)
+        selected = []
+        forbidden_groups = set()
+
+        for item in available:
+            if len(selected) >= k:
+                break
+            if item["group"] in forbidden_groups:
+                continue
+            selected_groups = {it["group"] for it in selected}
+            if any(g in selected_groups for g in item.get("conflicts_with", [])):
+                continue
+
+            selected.append(item)
+            forbidden_groups.add(item["group"])
+            forbidden_groups.update(item.get("conflicts_with", []))
+
+        if len(selected) == k:
+            return selected
+
+    raise RuntimeError(
+        f"❌ Không thể lấy đủ k={k} ràng buộc tương thích từ pool (size={len(pool)}) "
+        f"sau {max_retries} lần thử! Vui lòng kiểm tra lại ma trận xung đột."
+    )
+
+
+def augment_instruction_vi(
+    base_text: str,
+    k: int,
+    split: str = "seen",
+    rng: Optional[random.Random] = None
+) -> Dict[str, Any]:
     """Ghép base instruction tiếng Việt với k hard constraints tiếng Việt."""
     pool = SEEN_CONSTRAINT_DEFINITIONS if split == "seen" else UNSEEN_CONSTRAINT_DEFINITIONS
-    chosen_defs = sample_compatible_constraints(k, pool=pool)
+    chosen_defs = sample_compatible_constraints(k, pool=pool, rng=rng)
 
     constraint_texts = []
     instruction_ids = []
@@ -469,6 +550,35 @@ def augment_instruction_vi(base_text: str, k: int, split: str = "seen") -> Dict[
     }
 
 
+def run_automated_tests():
+    """Kiểm tra tự động theo yêu cầu kiểm chuẩn (Automated Quality Guard):
+    1. Ma trận xung đột đối xứng hai chiều cho cả SEEN và UNSEEN.
+    2. len(selected) == k cho k=1..5 trên 500 lần thử ngẫu nhiên mỗi k (100% tỷ lệ thành công).
+    """
+    print("=" * 65)
+    print("🧪 BẮT ĐẦU CHẠY KIỂM TRA TỰ ĐỘNG (UNIT TESTS)")
+    print("=" * 65)
+
+    print("1. Kiểm tra tính đối xứng của ma trận xung đột (Symmetry Check):")
+    validate_conflict_symmetry("SEEN", SEEN_CONSTRAINT_DEFINITIONS)
+    print("   ✅ SEEN pool (29 loại): Ma trận xung đột đối xứng 100%.")
+    validate_conflict_symmetry("UNSEEN", UNSEEN_CONSTRAINT_DEFINITIONS)
+    print("   ✅ UNSEEN pool (24 loại): Ma trận xung đột đối xứng 100%.")
+
+    print("\n2. Kiểm tra lấy mẫu len(selected) == k (500 trials cho mỗi k=1..5):")
+    test_rng = random.Random(42)
+    for split_name, pool in [("SEEN", SEEN_CONSTRAINT_DEFINITIONS), ("UNSEEN", UNSEEN_CONSTRAINT_DEFINITIONS)]:
+        print(f"   --- Kiểm tra {split_name} Pool ---")
+        for k in [1, 2, 3, 4, 5]:
+            for trial in range(500):
+                res = sample_compatible_constraints(k, pool=pool, rng=test_rng)
+                assert len(res) == k, f"Lỗi ở {split_name} trial {trial}: yêu cầu k={k} nhưng được {len(res)}!"
+            print(f"   ✅ {split_name} k={k}: Đạt 500/500 lần chọn đúng {k} ràng buộc (100%).")
+
+    print("\n🎉 TẤT CẢ KIỂM TRA ĐỀU VƯỢT QUA XUẤT SẮC!")
+    print("=" * 65)
+
+
 def main():
     parser = argparse.ArgumentParser(description="Module 1: Sinh Hard Constraints tiếng Việt theo Batch 16 mẫu.")
     parser.add_argument("--input", type=str, default="datasets/raw/base_vi.jsonl",
@@ -479,6 +589,10 @@ def main():
                         help="Tập ràng buộc: 'seen' (29 loại) hoặc 'unseen' (24 loại OOD)")
     parser.add_argument("--batch-size", type=int, default=16,
                         help="Số lượng mẫu trong mỗi batch (mặc định: 16)")
+    parser.add_argument("--seed", type=int, default=42,
+                        help="Seed ngẫu nhiên cho tính tái lập độc lập (mặc định: 42)")
+    parser.add_argument("--test", action="store_true",
+                        help="Chạy bộ kiểm tra tự động ma trận xung đột và khả năng sinh k=1..5")
     parser.add_argument("--id", type=str, default=None,
                         help="Chạy duy nhất 1 mẫu theo ID số nguyên hoặc key")
     parser.add_argument("--start-idx", type=int, default=None,
@@ -501,11 +615,19 @@ def main():
                         help="Thời gian nghỉ (giây) giữa các request API dịch (mặc định 3.5s phù hợp hạn mức 15 RPM của Gemini free)")
     args = parser.parse_args()
 
+    if args.test:
+        run_automated_tests()
+        sys.exit(0)
+
     if not os.path.exists(args.input):
         print(f"❌ Lỗi: File input '{args.input}' không tồn tại. Vui lòng chạy fetch_and_translate.py trước.")
         sys.exit(1)
 
     os.makedirs(args.output_dir, exist_ok=True)
+
+    # Khởi tạo bộ sinh số ngẫu nhiên độc lập đảm bảo tái lập
+    rng = random.Random(args.seed)
+    random.seed(args.seed)
 
     # Đọc dữ liệu từ base_vi.jsonl
     raw_samples = []
@@ -537,7 +659,7 @@ def main():
         end_idx = min(end_idx, start_idx + args.num_samples)
 
     selected_samples = raw_samples[start_idx:end_idx]
-    print(f"⚙️ Xử lý {len(selected_samples)} mẫu (từ {start_idx} đến {end_idx}) với Split '{args.split}'.")
+    print(f"⚙️ Xử lý {len(selected_samples)} mẫu (từ {start_idx} đến {end_idx}) với Split '{args.split}' (Seed: {args.seed}).")
 
     # Xác định các key đã có nếu --resume
     processed_keys = set()
@@ -556,9 +678,12 @@ def main():
                     pass
         print(f"🔄 [RESUME] Đã phát hiện {len(processed_keys)} mẫu đã xử lý trước đó.")
 
-    # Phân phối K=1..5
+    # Phân phối K=1..5 (Khớp 100% phân phối của tập Seen)
     k_options = [1, 2, 3, 4, 5]
     k_weights = [0.20, 0.35, 0.25, 0.15, 0.05]
+
+    # Theo dõi phân phối k thực tế
+    k_distribution = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0}
 
     # Chia thành các batch 16 mẫu
     batch_size = args.batch_size
@@ -617,8 +742,9 @@ def main():
         if not full_base or len(full_base.strip()) < 5:
             continue
 
-        k = random.choices(k_options, weights=k_weights, k=1)[0]
-        aug = augment_instruction_vi(full_base, k=k, split=args.split)
+        k = rng.choices(k_options, weights=k_weights, k=1)[0]
+        aug = augment_instruction_vi(full_base, k=k, split=args.split, rng=rng)
+        k_distribution[aug["num_constraints"]] += 1
 
         record = {
             "id": item.get("id"),
@@ -676,12 +802,24 @@ def main():
         print(f"📦 [Batch {batch_idx:03d} (Cuối)] Đã lưu {len(current_batch)} mẫu vào '{batch_filepath}'.")
         total_saved += len(current_batch)
 
-    print("\n" + "=" * 60)
+    print("\n" + "=" * 65)
     print(f"🎉 HOÀN THÀNH MODULE 1 (Hard Constraints Tiếng Việt):")
     print(f"   • Tổng số mẫu đã lưu : {total_saved} mẫu")
     print(f"   • Số batch hoàn thành: {batch_idx}")
     print(f"   • Thư mục kết quả    : {args.output_dir}")
-    print("=" * 60)
+    print("=" * 65)
+    print("📊 PHÂN PHỐI SỐ LƯỢNG RÀNG BUỘC (NUM_CONSTRAINTS / K):")
+    print("+-------+------------+------------+")
+    print("|   k   |   Số mẫu   |  Tỷ lệ (%) |")
+    print("+-------+------------+------------+")
+    for k_val in sorted(k_distribution.keys()):
+        cnt = k_distribution[k_val]
+        pct = (cnt / total_saved * 100) if total_saved > 0 else 0.0
+        print(f"|   {k_val}   |   {cnt:6d}   |  {pct:8.1f}% |")
+    print("+-------+------------+------------+")
+    mean_k = sum(k_val * cnt for k_val, cnt in k_distribution.items()) / total_saved if total_saved > 0 else 0.0
+    print(f"   • Giá trị k trung bình (Mean k): {mean_k:.2f}")
+    print("=" * 65)
 
 
 if __name__ == "__main__":
