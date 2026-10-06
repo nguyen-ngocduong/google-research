@@ -416,12 +416,13 @@ def sample_compatible_constraints(k: int, pool: List[Dict[str, Any]]) -> List[Di
             break
         if item["group"] in forbidden_groups:
             continue
-        if any(g in forbidden_groups for g in item["conflicts_with"]):
+        selected_groups = {it["group"] for it in selected}
+        if any(g in selected_groups for g in item.get("conflicts_with", [])):
             continue
 
         selected.append(item)
         forbidden_groups.add(item["group"])
-        forbidden_groups.update(item["conflicts_with"])
+        forbidden_groups.update(item.get("conflicts_with", []))
 
     return selected
 
