@@ -6,3 +6,6 @@
 *.pdf
 *.md
 lora_and_results
+!baseline_qwen3_5_0_8b_colab.ipynb
+!train_qwen3_5_0_8b_colab.ipynb
+!eval_qwen3_5_0_8b_colab.ipynb

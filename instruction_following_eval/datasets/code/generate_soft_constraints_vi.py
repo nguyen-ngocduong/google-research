@@ -28,6 +28,7 @@ import urllib.error
 from typing import List, Dict, Any, Optional, Tuple
 from openai import OpenAI
 from dotenv import load_dotenv
+from soft_constraints_policy import normalize_soft_constraints, soft_reward_spec
 
 load_dotenv()
 
@@ -163,7 +164,11 @@ Trả về DUY NHẤT một mảng JSON (không bọc giải thích rườm rà)
 QUY TẮC SỐNG CÒN:
 1. KHÔNG được xung đột với Hard Constraints hiện có.
 2. KHÔNG chép nguyên văn đáp án mẫu làm lộ lời giải; chỉ tập trung vào nguyên tắc chất lượng, chiều sâu nội dung hoặc phong cách.
-3. Toàn bộ description và eval_rubric phải viết bằng tiếng Việt tự nhiên chuẩn mực."""
+3. Toàn bộ description và eval_rubric phải viết bằng tiếng Việt tự nhiên chuẩn mực.
+4. Description phải công bố TẤT CẢ điều kiện đạt trong rubric: số lượng tối thiểu, nội dung, vai diễn hoặc định dạng. Không thêm điều kiện ẩn chỉ judge mới biết.
+5. Mỗi rubric phải xác định cả trường hợp đạt và không đạt, kể cả câu trả lời sát ngưỡng. Với nội dung, các ý phải đúng và liên quan, không chỉ nhắc từ khóa.
+6. Phong cách/vai diễn phải có dấu hiệu quan sát được trong cách giải thích và giao tiếp; không thưởng chỉ vì tự xưng chuyên gia hoặc chèn thuật ngữ.
+7. Không thay nhiệm vụ gốc (ví dụ: yêu cầu chỉ xuất 0/1 không được thêm lời giải dài). Không dùng hình thức bảng/đếm từ làm tiêu chí mềm nếu đã được kiểm tra bằng luật cứng."""
 
     return prompt
 
@@ -196,8 +201,10 @@ Các Soft Constraints cần thẩm định:
 Nhiệm vụ:
 Kiểm tra từng soft constraint xem:
 1. Có bị mâu thuẫn trực tiếp với các Ràng buộc cứng không?
-2. Tiêu chí eval_rubric có rõ ràng để chấm điểm nhị phân (1 hoặc 0) không?
-3. Trả về mảng JSON kết quả giữ nguyên các soft constraint và thêm trường "verification_status": "PASS" (nếu đạt) hoặc "REJECT" (nếu xung đột/kém chất lượng)."""
+2. Tiêu chí eval_rubric có rõ ràng để chấm điểm nhị phân (1 hoặc 0), bao gồm trường hợp sát ngưỡng không?
+3. Description có công bố đầy đủ tất cả yêu cầu của rubric, không có điều kiện ẩn không?
+4. Có làm thay đổi nhiệm vụ gốc, bắt buộc câu trả lời sai hoặc thưởng chỉ vì nhắc từ khóa/tự xưng chuyên gia không?
+5. Trả về mảng JSON giữ nguyên id và thêm "verification_status": "PASS" hoặc "REJECT", cùng "verification_reason" giải thích ngắn. Chỉ PASS khi đạt tất cả kiểm tra."""
 
     gemini_resp = call_gemini_verify(api_key, prompt, model="gemini-3.5-flash-lite")
     if gemini_resp:
@@ -209,16 +216,27 @@ Kiểm tra từng soft constraint xem:
                 clean_resp = clean_resp.split("```")[1].split("```")[0].strip()
             verified_list = json.loads(clean_resp)
             if isinstance(verified_list, list) and len(verified_list) == len(soft_constraints):
-                for idx, v in enumerate(verified_list):
-                    soft_constraints[idx]["verification_status"] = v.get("verification_status", "PASS")
-                    soft_constraints[idx]["verified_by"] = "gemini-3.5-flash-lite"
+                by_id = {v.get("id"): v for v in verified_list if isinstance(v, dict)}
+                expected = {s["id"] for s in soft_constraints}
+                if set(by_id) != expected or len(by_id) != len(verified_list):
+                    raise ValueError("Verification IDs missing, duplicate or unknown")
+                if any(v.get("verification_status") not in ("PASS", "REJECT") or
+                       not isinstance(v.get("verification_reason"), str) or not v["verification_reason"].strip()
+                       for v in by_id.values()):
+                    raise ValueError("Verification status/reason missing")
+                for item in soft_constraints:
+                    verified = by_id[item["id"]]
+                    item["verification_status"] = verified["verification_status"]
+                    item["verification_reason"] = verified["verification_reason"]
+                    item["verified_by"] = "gemini-3.5-flash-lite"
                 return soft_constraints
         except Exception:
             pass
 
     for sc in soft_constraints:
-        sc["verification_status"] = "PASS"
-        sc["verified_by"] = "gemini-3.5-flash-lite (default-pass)"
+        sc["verification_status"] = "UNVERIFIED"
+        sc["verification_reason"] = "Verification API failed or returned invalid IDs/status/reason"
+        sc["verified_by"] = "none"
     return soft_constraints
 
 
@@ -373,8 +391,13 @@ def main():
                     clean_json = clean_json.split("```")[1].split("```")[0].strip()
 
                 parsed_soft = json.loads(clean_json)
-                if isinstance(parsed_soft, list):
-                    soft_constraints_generated = parsed_soft
+                if not isinstance(parsed_soft, list) or not 1 <= len(parsed_soft) <= 2:
+                    raise ValueError("Expected 1–2 soft constraints")
+                # Model-generated PASS is not evidence of external verification.
+                for sc in parsed_soft:
+                    sc["verification_status"] = "UNVERIFIED"
+                normalize_soft_constraints(parsed_soft, require_verified=False, split=args.split)
+                soft_constraints_generated = parsed_soft
                 break
             except Exception as e:
                 err_str = str(e)
@@ -393,13 +416,13 @@ def main():
                 "category": "semantic_completeness",
                 "description": "Câu trả lời phải giải quyết trọn vẹn và chuẩn xác yêu cầu trọng tâm của đề bài.",
                 "eval_rubric": "Chấm 1 nếu phản hồi trả lời đúng trọng tâm và đầy đủ ý. Chấm 0 nếu lan man hoặc thiếu ý chính.",
-                "verification_status": "PASS",
+                "verification_status": "UNVERIFIED",
                 "verified_by": "fallback"
             }]
 
-        # 2. Gọi Engine 2 (Gemini 3.5 Flash Lite) để cross-verify nếu Engine 1 là mô hình khác (ví dụ Gemma)
-        # Nếu Engine 1 đã là Gemini thì không cần verify lại để tiết kiệm quota 15 RPM
-        if GOOGLE_API_KEY and "gemini" not in resolved_model.lower():
+        # 2. Kiểm định riêng, kể cả khi engine sinh cũng là Gemini.
+        # Không có key / lỗi kiểm định: giữ UNVERIFIED và không đóng gói để train.
+        if GOOGLE_API_KEY:
             soft_constraints_generated = verify_soft_constraint_with_gemini(
                 GOOGLE_API_KEY,
                 base_inst,
@@ -409,11 +432,12 @@ def main():
         else:
             for sc in soft_constraints_generated:
                 if "verification_status" not in sc:
-                    sc["verification_status"] = "PASS"
-                    sc["verified_by"] = resolved_model
+                    sc["verification_status"] = "UNVERIFIED"
+                sc["verified_by"] = "none"
 
         # Cập nhật prompt mở rộng 2 tầng (Hard + Soft)
-        soft_bullets = "\n".join([f"- {sc['description']}" for sc in soft_constraints_generated])
+        accepted_soft, excluded_soft = normalize_soft_constraints(soft_constraints_generated, split=args.split)
+        soft_bullets = "\n".join([f"- {sc['description']}" for sc in accepted_soft])
         hard_prompt = item.get("prompt", "")
         hybrid_prompt = f"{hard_prompt}\n\n[Hướng dẫn Nội dung & Ngữ nghĩa]\n{soft_bullets}"
 
@@ -425,15 +449,13 @@ def main():
             "constraints": soft_constraints_generated
         }
         record["num_constraints"] = {
-            "total": item.get("num_constraints", len(hard_desc)) + len(soft_constraints_generated),
+            "total": len(hard_desc) + len(accepted_soft),
             "hard_count": len(hard_desc),
-            "soft_count": len(soft_constraints_generated)
+            "soft_count": len(accepted_soft)
         }
-        record["reward_spec"] = {
-            "aggregation_strategy": "hard_priority_gated",
-            "weights": {"w_hard": 0.75, "w_soft": 0.25},
-            "formula": "Reward = (0.75 * R_hard + 0.25 * R_soft) if (R_hard > 0 and R_soft >= 0.5) else 0.0"
-        }
+        record["soft_quality"] = {"accepted_count": len(accepted_soft), "excluded": excluded_soft,
+                                  "ready_for_hybrid_training": bool(accepted_soft)}
+        record["reward_spec"] = soft_reward_spec()
         record["batch_id"] = batch_idx
         record["batch_sample_idx"] = len(current_batch) + 1
         record["updated_at"] = datetime.datetime.now().isoformat()

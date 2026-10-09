@@ -7,7 +7,7 @@ Mục đích: Đóng gói tập dữ liệu cuối cùng từ Module 2 (Hard + S
 
 Tính năng:
 - Tiếp nhận các file batch 16 mẫu từ Module 2 (results/module_soft_constraints/).
-- Giữ nguyên 1:1 số lượng mẫu (1 batch = đúng 16 mẫu).
+- Chỉ đóng gói mẫu có rubric được kiểm định; lưu các mục bị loại riêng.
 - Ghép prompt hoàn chỉnh 2 tầng:
     Tầng 1: Ràng buộc Cấu trúc & Định dạng (Hard Constraints - 29 Seen / 24 Unseen)
     Tầng 2: Hướng dẫn Phong cách & Ngữ nghĩa (Soft Constraints - 5 Seen / 7 Unseen)
@@ -27,6 +27,7 @@ import argparse
 import datetime
 import unicodedata
 from typing import List, Dict, Any, Optional
+from soft_constraints_policy import select_row_soft_constraints, soft_reward_spec
 
 
 def norm_vi(text: str) -> str:
@@ -54,7 +55,7 @@ def build_final_prompt_vi(base_text: str, hard_descs: List[str], soft_constraint
             f"{hard_bullets}"
         )
     else:
-        final_prompt = base_text
+        final_prompt = base_text + ("\n\n[HƯỚNG DẪN PHONG CÁCH & NGỮ NGHĨA]\n" + soft_bullets if soft_bullets else "")
 
     return norm_vi(final_prompt.strip())
 
@@ -166,6 +167,7 @@ def main():
     current_batch = []
     batch_idx = 1
     total_saved = 0
+    quarantined = []
 
     for item in selected:
         key = item.get("key", f"sample_{item.get('id', 0)}")
@@ -175,17 +177,29 @@ def main():
         base_inst = item.get("base_instruction", item.get("instruction_vi", item.get("instruction", "")))
         hard_data = item.get("hard_constraints", {})
         hard_descs = hard_data.get("constraints_description", [])
-        soft_list = item.get("soft_constraints", {}).get("constraints", [])
+        soft_list, excluded_soft = select_row_soft_constraints(item, split=args.split)
+        if excluded_soft:
+            quarantined.append({"key": key, "excluded": excluded_soft, "record": item,
+                                "whole_record_excluded": not soft_list})
+        if not soft_list:
+            print(f"Quarantine {key}: không có soft constraint được kiểm định hợp lệ.")
+            continue
 
         # Tạo prompt hoàn chỉnh
         full_prompt = build_final_prompt_vi(base_inst, hard_descs, soft_list)
 
         final_record = copy.deepcopy(item)
         final_record["prompt"] = full_prompt
+        final_record["hybrid_prompt"] = full_prompt
         final_record["messages"] = [{"role": "user", "content": full_prompt}]
         final_record["instruction_vi"] = item.get("instruction_vi", "")
         final_record["input_vi"] = item.get("input_vi", "")
         final_record["updated_at"] = datetime.datetime.now().isoformat()
+        final_record["soft_constraints"] = {"verifier_type": "llm_reasoning_judge", "constraints": soft_list}
+        final_record["reward_spec"] = soft_reward_spec()
+        final_record["num_constraints"] = {"hard_count": len(hard_descs), "soft_count": len(soft_list),
+                                           "total": len(hard_descs) + len(soft_list)}
+        final_record["soft_quality"] = {"excluded": excluded_soft, "ready_for_hybrid_training": True}
 
         # Chuẩn hóa cấu trúc verifier thành list phẳng [{"id": ..., "kwargs": ...}]
         verifier_list = []
@@ -200,13 +214,7 @@ def main():
                 verifier_list.append(gt)
 
         # Chuẩn hóa soft constraints giữ đầy đủ id, description, rubric
-        soft_clean_list = []
-        for sc in soft_list:
-            soft_clean_list.append({
-                "id": sc.get("id", ""),
-                "description": sc.get("description", sc.get("description_vi", "")),
-                "rubric": sc.get("eval_rubric", sc.get("rubric", ""))
-            })
+        soft_clean_list = soft_list  # Giữ category và provenance kiểm định cho GRPO.
 
         # Gán verifier và soft dạng JSON string cho cả final_record để khớp với GRPO format
         final_record["verifier"] = json.dumps(verifier_list, ensure_ascii=False)
@@ -215,10 +223,14 @@ def main():
         # Dòng định dạng chuẩn cho GRPOTrainer (Zero-SFT)
         grpo_row = {
             "key": key,
+            "base_instruction": base_inst,
+            "constraint_split": args.split,
             "prompt": [{"role": "user", "content": full_prompt}],
             "verifier": json.dumps(verifier_list, ensure_ascii=False),
             "soft": json.dumps(soft_clean_list, ensure_ascii=False),
             "num_hard": len(verifier_list),
+            "reward_spec": soft_reward_spec(),
+            "soft_quality": {"ready_for_hybrid_training": True},
             "base_pass_rate": None
         }
 
@@ -245,6 +257,10 @@ def main():
             total_saved += len(current_batch)
             current_batch = []
             batch_idx += 1
+
+    if quarantined:
+        with open(os.path.join(args.output_dir, f"soft_quarantine_{timestamp}.json"), "w", encoding="utf-8") as f_q:
+            json.dump(quarantined, f_q, ensure_ascii=False, indent=2)
 
     if current_batch:
         b_name = f"module_final_batch_{batch_idx:03d}_{timestamp}.json"
